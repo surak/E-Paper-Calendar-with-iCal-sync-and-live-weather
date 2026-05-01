@@ -81,7 +81,7 @@ class Calendar(inkycal_module):
       self.ical_files = config['ical_files']
 
     # additional configuration
-    self.timezone = get_system_tz()
+    self.timezone = "Europe/Madrid"
     self.num_font = ImageFont.truetype(
       fonts['NotoSans-SemiCondensed'], size = self.fontsize)
 

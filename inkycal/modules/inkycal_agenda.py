@@ -80,7 +80,7 @@ class Agenda(inkycal_module):
       self.ical_files = config['ical_files']
 
     # Additional config
-    self.timezone = get_system_tz()
+    self.timezone = "Europe/Madrid"
 
     # give an OK message
     print(f'{filename} loaded')

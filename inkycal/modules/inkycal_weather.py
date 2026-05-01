@@ -100,7 +100,7 @@ class Weather(inkycal_module):
 
     # additional configuration
     self.owm = OWM(self.api_key).weather_manager()
-    self.timezone = get_system_tz()
+    self.timezone = "Europe/Madrid"
     self.locale = config['language']
     self.weatherfont = ImageFont.truetype(
       fonts['weathericons-regular-webfont'], size = self.fontsize)
@@ -361,7 +361,7 @@ class Weather(inkycal_module):
           'temp':temp,
           'icon':icon,
           'stamp': forecast_timings[forecasts.index(forecast)].to(
-            get_system_tz()).format('H.00' if self.hour_format == 24 else 'h a')
+            "Europe/Madrid").format('H.00' if self.hour_format == 24 else 'h a')
           }
 
     elif self.forecast_interval == 'daily':

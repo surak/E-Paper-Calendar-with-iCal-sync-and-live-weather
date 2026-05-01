@@ -48,18 +48,52 @@ class iCalendar:
     example: 'URL1' (single url) OR ['URL1', 'URL2'] (multiple URLs)
     add username and password to access protected files
     """
-
+    logger.info("ALEX TRYING NOW TO LOAD URLS")
     if type(url) == list:
       if (username == None) and (password == None):
-        ical = [Calendar.from_ical(str(urlopen(_).read().decode()))
-                                   for _ in url]
+        ical = []
+        for _url in url:
+          try:
+            response = urlopen(_url, timeout=30).read().decode()
+            parsed_ical = Calendar.from_ical(response)
+            if parsed_ical is not None:
+              ical.append(parsed_ical)
+            else:
+              logger.warning(f'Calendar parsing returned None for URL: {_url}')
+          except Exception as e:
+            logger.error(f'Failed to load URL {_url}: {e}')
       else:
-        ical = [auth_ical(each_url, username, password) for each_url in url]
+        ical = []
+        for each_url in url:
+          try:
+            parsed_ical = auth_ical(each_url, username, password)
+            if parsed_ical is not None:
+              ical.append(parsed_ical)
+          except Exception as e:
+            logger.error(f'Failed to load URL {each_url}: {e}')
     elif type(url) == str:
       if (username == None) and (password == None):
-        ical = [Calendar.from_ical(str(urlopen(url).read().decode()))]
+        try:
+          response = urlopen(url, timeout=30).read().decode()
+          parsed_ical = Calendar.from_ical(response)
+          if parsed_ical is not None:
+            ical = [parsed_ical]
+          else:
+            logger.warning(f'Calendar parsing returned None for URL: {url}')
+            ical = []
+        except Exception as e:
+          logger.error(f'Failed to load URL {url}: {e}')
+          ical = []
       else:
-        ical = [auth_ical(url, username, password)]
+        try:
+          parsed_ical = auth_ical(url, username, password)
+          if parsed_ical is not None:
+            ical = [parsed_ical]
+          else:
+            ical = []
+        except Exception as e:
+          logger.error(f'Failed to load URL {url}: {e}')
+          ical = []
     else:
       raise Exception (f"Input: '{url}' is not a string or list!")
 
@@ -124,14 +158,14 @@ class iCalendar:
     t_start_recurring = fmt(t_start)
     t_end_recurring = fmt(t_end)
 
-    # Fetch recurring events
+    # Fetch recurring events (filter out None calendars)
     recurring_events = (recurring_ical_events.of(ical).between(
                         t_start_recurring, t_end_recurring)
-                        for ical in self.icalendars)
+                        for ical in self.icalendars if ical is not None)
 
     events = (
       {
-      'title': events.get('SUMMARY').lstrip(),
+      'title': events.get('SUMMARY').lstrip() if events.get('SUMMARY') else '',
 
       'begin': arrow.get(events.get('DTSTART').dt).to(timezone) if (
         arrow.get(events.get('dtstart').dt).format('HH:mm') != '00:00')
@@ -189,7 +223,7 @@ class iCalendar:
     """Get the timezone set by the system"""
 
     try:
-      local_tz = time.tzname[1]
+      local_tz = "Europe/Madrid"  # Fixed timezone for CEST/CET
     except:
       print('System timezone could not be parsed!')
       print('Please set timezone manually!. Setting timezone to None...')

@@ -260,7 +260,7 @@ class Inkycal:
     print(f'Selected E-paper display: {self.settings["model"]}')
 
     while True:
-      current_time = arrow.now(tz=get_system_tz())
+      current_time = arrow.now(tz="Europe/Madrid")
       print(f"Date: {current_time.format('D MMM YY')} | "
             f"Time: {current_time.format('HH:mm')}")
       print('Generating images for all modules...', end='')
