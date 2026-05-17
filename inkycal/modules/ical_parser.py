@@ -14,10 +14,12 @@ Copyright by aceisace
 """
 
 import arrow
+import signal
 from urllib.request import urlopen
 import logging
 import time
 import os
+import socket
 
 try:
   import recurring_ical_events
@@ -34,6 +36,26 @@ except ModuleNotFoundError:
 
 filename = os.path.basename(__file__).split('.py')[0]
 logger = logging.getLogger(filename)
+
+
+
+def hard_fetch(url, timeout=25):
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Hard timeout (%ds)" % timeout)
+    old = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
+    old_getaddrinfo = socket.getaddrinfo
+    def getaddrinfo_ipv4_only(*args, **kwargs):
+        return [result for result in old_getaddrinfo(*args, **kwargs)
+                if result[0] == socket.AF_INET]
+    socket.getaddrinfo = getaddrinfo_ipv4_only
+    try:
+        result = urlopen(url, timeout=timeout).read().decode()
+    finally:
+        socket.getaddrinfo = old_getaddrinfo
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
+    return result
 
 class iCalendar:
   """iCalendar parsing moudule for inkycal.
@@ -54,7 +76,7 @@ class iCalendar:
         ical = []
         for _url in url:
           try:
-            response = urlopen(_url, timeout=30).read().decode()
+            response = hard_fetch(_url)
             parsed_ical = Calendar.from_ical(response)
             if parsed_ical is not None:
               ical.append(parsed_ical)
@@ -74,7 +96,7 @@ class iCalendar:
     elif type(url) == str:
       if (username == None) and (password == None):
         try:
-          response = urlopen(url, timeout=30).read().decode()
+          response = hard_fetch(url)
           parsed_ical = Calendar.from_ical(response)
           if parsed_ical is not None:
             ical = [parsed_ical]
